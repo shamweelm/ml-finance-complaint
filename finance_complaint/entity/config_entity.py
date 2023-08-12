@@ -14,3 +14,10 @@ DataIngestionConfig = namedtuple("DataIngestionConfig", ["from_date",
                                                          ])
 
 DataValidationConfig = namedtuple('DataValidationConfig', ["accepted_data_dir", "rejected_data_dir", "file_name"])
+
+DataTransformationConfig = namedtuple('DataTransformationConfig', ['file_name', 
+                                                                   'export_pipeline_dir',
+                                                                   'transformed_train_dir', 
+                                                                   'transformed_test_dir',
+                                                                   'test_size'
+                                                                   ])

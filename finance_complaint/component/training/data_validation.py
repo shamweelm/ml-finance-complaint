@@ -6,9 +6,10 @@ from typing import List, Dict
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col
 
+from finance_complaint.config.pipeline.training import FinanceConfig
 from finance_complaint.config.spark_manager import spark_session
 from finance_complaint.entity.artifact_entity import DataIngestionArtifact, DataValidationArtifact
-from finance_complaint.entity.config_entity import DataValidationConfig
+from finance_complaint.entity.config_entity import DataValidationConfig, DataIngestionConfig
 
 from finance_complaint.entity.schema import FinanceDataSchema
 from finance_complaint.exception import FinanceException
@@ -75,8 +76,8 @@ class DataValidation(FinanceDataSchema):
         except Exception as e:
             raise FinanceException(e, sys)
     
-    # Change threshold to 0.4 to test with sample data
-    def get_unwanted_and_high_missing_value_columns(self, dataframe: DataFrame, threshold: float = 0.2) -> List[str]:
+    # Change threshold to 0.4 to test with sample data, else 0.2
+    def get_unwanted_and_high_missing_value_columns(self, dataframe: DataFrame, threshold: float = 0.4) -> List[str]:
         try:
             missing_report: Dict[str:MissingReport] = self.get_missing_report(dataframe)
 
@@ -173,3 +174,39 @@ class DataValidation(FinanceDataSchema):
             return artifact
         except Exception as e:
             raise FinanceException(e, sys)
+        
+
+def main():
+    try:
+        config = FinanceConfig()
+        data_validation_config = config.get_data_validation_config()
+
+        # /Users/shamweelmohammed/Desktop/Upskill/GIT/ml-finance-complaint/
+        data_ingestion_config = DataIngestionConfig(from_date='2023-08-10', 
+                            to_date='2023-08-12', 
+                            data_ingestion_dir='finance_artifact/data_ingestion/20230812_135936', 
+                            download_dir='finance_artifact/data_ingestion/20230812_135936/downloaded_files', 
+                            file_name='finance_complaint', 
+                            feature_store_dir='finance_artifact/data_ingestion/feature_store', 
+                            failed_dir='finance_artifact/data_ingestion/20230812_135936/failed_downloaded_files', 
+                            metadata_file_path='finance_artifact/data_ingestion/meta_info.yaml', 
+                            datasource_url='https://www.consumerfinance.gov/data-research/consumer-complaints/search/api/v1/?date_received_max=<todate>&date_received_min=<fromdate>&field=all&format=json')
+        
+        data_ingestion_artifact = DataIngestionArtifact(feature_store_file_path='finance_artifact/data_ingestion/feature_store/finance_complaint', 
+                                                        metadata_file_path='finance_artifact/data_ingestion/meta_info.yaml', 
+                                                        download_dir='finance_artifact/data_ingestion/20230812_135936/downloaded_files')
+
+        data_validation = DataValidation(data_validation_config=data_validation_config,
+                                        data_ingestion_artifact=data_ingestion_artifact)
+        data_validation.initiate_data_validation()
+        
+    except Exception as e:
+        raise FinanceException(e, sys)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+
+    except Exception as e:
+        logger.exception(e)
